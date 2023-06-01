@@ -8,7 +8,7 @@ from scipy.cluster.hierarchy import linkage, dendrogram
 import tqdm
 import igraph
 
-from src import create_tax_tree
+from .textreeCreate import create_tax_tree
 
 
 def save_2d(otu, name, path):
