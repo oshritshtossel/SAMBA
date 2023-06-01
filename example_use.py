@@ -1,7 +1,7 @@
 import MIPMLP
 import pandas as pd
-from micro2matrix import micro2matrix
-from SAMBA_metric import *
+from src import micro2matrix
+from src import build_SAMBA_distance_matrix
 
 if __name__ == '__main__':
     # Load the raw data in the required format
@@ -16,4 +16,5 @@ if __name__ == '__main__':
 
     # Calculate the distance matrix according to SAMBA
     DM = build_SAMBA_distance_matrix(folder)
-    c=0
+
+    DM.to_csv("result.csv")

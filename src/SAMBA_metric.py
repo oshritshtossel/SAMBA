@@ -1,7 +1,8 @@
-import pandas as pd
-from scipy.spatial.distance import cdist
-import numpy as np
 import os
+
+import pandas as pd
+import numpy as np
+from scipy.spatial.distance import cdist
 from sewar.full_ref import mse, sam
 
 
@@ -33,7 +34,7 @@ def load_img(folder_path, tag=None):
     return final_array, names
 
 
-def fft_prosses(x, cutoff):
+def fft_process(x, cutoff):
     """
     Apply FFT on each images with the cutoff given.
     :param x: A single image (ndarray)
@@ -88,7 +89,7 @@ def final_distance(output1, output2, f):
         return mse(output1, output2)
 
 
-def build_SAMBA_distance_matrix(folder_path,metric="sam",cutoff=0.8,tag=None):
+def build_SAMBA_distance_matrix(folder_path, metric="sam", cutoff=0.8, tag=None):
     """
     Build SAMBA distance matrix of the FFT processed images using the metric as the
     final distance metric between the processed images, and the cutoff as the FFT cutoff
@@ -101,7 +102,7 @@ def build_SAMBA_distance_matrix(folder_path,metric="sam",cutoff=0.8,tag=None):
     :return: Distance matrix dataframe (pandas)
     """
     # Load images from the folder
-    imgs, names = load_img(folder_path,tag)
+    imgs, names = load_img(folder_path, tag)
 
     # Image shape
     x_axis = imgs.shape[-1]
@@ -111,16 +112,16 @@ def build_SAMBA_distance_matrix(folder_path,metric="sam",cutoff=0.8,tag=None):
     def fft_dist(x, y):
         x = x.reshape(x_axis, y_axis)
         y = y.reshape(x_axis, y_axis)
-        x_after = fft_prosses(x, cutoff)
-        y_after = fft_prosses(y, cutoff)
+        x_after = fft_process(x, cutoff)
+        y_after = fft_process(y, cutoff)
         return final_distance(x_after, y_after, metric)
 
     # Build the SAMBA distance matrix
     dm = cdist(imgs.reshape(imgs.shape[0], -1), imgs.reshape(imgs.shape[0], -1), metric=fft_dist)
+
     if tag is None:
         dm = pd.DataFrame(dm, index=names, columns=names)
     else:
         dm = pd.DataFrame(dm, index=tag.index, columns=tag.index)
 
     return dm
-

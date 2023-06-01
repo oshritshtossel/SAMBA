@@ -1,10 +1,14 @@
-from concurrent.futures.thread import ThreadPoolExecutor
-import igraph
-import numpy as np
 import os
+import threading
+import sys
+from concurrent.futures.thread import ThreadPoolExecutor
+
+import numpy as np
+from scipy.cluster.hierarchy import linkage, dendrogram
 import tqdm
-from plotly.figure_factory._dendrogram import sch
-from textreeCreate import create_tax_tree
+import igraph
+
+from src import create_tax_tree
 
 
 def save_2d(otu, name, path):
@@ -64,7 +68,6 @@ def dfs_(tree, m, N):
 
 def get_map(tree, nettree):
     order, layers, ance = tree.bfs(0)
-    width = max(layers[-1] - layers[-2], layers[-2] - layers[-3])
     height = len(layers) - 1
 
     leafs_num = len([i for i in nettree if len(nettree.succ[i]) == 0])
@@ -103,27 +106,22 @@ def rec(otu, bacteria_names_order, N=None):
     if first_row is None:
         return
     X = otu[:, first_row, :]
+    Y = linkage(X.T)
 
-    Y = sch.linkage(X.T)
-    import threading
-    import sys
     sys.setrecursionlimit(13000)
     MB = 2 ** 20
-    # print(threading.stack_size())
     threading.stack_size(MB * 64)
     tpe = ThreadPoolExecutor(1)
 
-    f = tpe.submit(sch.dendrogram, Y, orientation='left', no_plot=True)
+    f = tpe.submit(dendrogram, Y, orientation='left', no_plot=True)
     Z1 = f.result()
-    # print(Z1)
 
-    # Z1 = sch.dendrogram(Y, orientation='left')
     idx = Z1['leaves']
     otu[:, :, :] = otu[:, :, idx]
     if N is not None:
         N[:, :] = N[:, idx]
 
-    bacteria_names_order = bacteria_names_order[idx]  # was [:]
+    bacteria_names_order = bacteria_names_order[idx]
 
     if first_row == (otu.shape[1] - 1):
         return
@@ -142,7 +140,7 @@ def rec(otu, bacteria_names_order, N=None):
         rec(s[0], s[1], s[2])
 
 
-def dendogram_ordering(otu, df,folder, save=False, N=None, with_dend=True):
+def dendogram_ordering(otu, df, folder, save=False, N=None, with_dend=True):
     names = np.array(list(df.columns))
     if with_dend == False:
         df = df
@@ -193,19 +191,6 @@ def tree_to_newick(g, root=None):
     return "(" + ','.join(subgs) + ")"
 
 
-
-def micro2matrix(df,folder,save):
-    otus2d, names = otu22d(df,save=False, with_names=True)
-    dendogram_ordering(otus2d, df,folder, save=save, N=names, with_dend=True)
-
-# if __name__ == '__main__':
-#     p = 20
-#
-#     df = pd.read_csv(f"example_data/tax7_subpca_log.csv", index_col=0)
-#
-#
-#     save = f"2D_otus_dendogram_ordered/17_d"
-#     otus2d, names = otu22d(df, save, with_names=True)  # df.iloc[:10]
-#     dendogram_ordering(otus2d, df, save=save, N=names, with_dend=True)
-#     # x = 3
-#     # otus2d = otu22d_IEEE(df, "2D_OTU_IEEE/Nugent_vagina")
+def micro2matrix(df, folder, save):
+    otus2d, names = otu22d(df, save=False, with_names=True)
+    dendogram_ordering(otus2d, df, folder, save=save, N=names, with_dend=True)

@@ -1,15 +1,14 @@
-# from openpyxl import Workbook, load_workbook
 import re
-import math
-import pandas
-import networkx as nx
 import pickle
 
+import networkx as nx
 
-"""
-every bacteria is an object to easily store it's information
-"""
+
 class Bacteria:
+    """
+    every bacteria is an object to easily store it's information
+    """
+
     def __init__(self, string, val):
         string = string.replace(" ", "")
         lst = re.split("; |__|;", string)
@@ -27,8 +26,6 @@ class Bacteria:
 
 def create_tax_tree(series, zeroflag=False):
     tempGraph = nx.DiGraph()
-    """workbook = load_workbook(filename="random_Otus.xlsx")
-    sheet = workbook.active"""
     valdict = {("Bacteria",): 0, ("Archaea",): 0}
     bac = []
     for i, (tax, val) in enumerate(series.items()):
@@ -47,12 +44,12 @@ def create_tax_tree(series, zeroflag=False):
 
 def updateval(graph, bac, vald, num, adde):
     if adde:
-        graph.add_edge(tuple(bac.lst[:num+1]), tuple(bac.lst[:num+2]))
+        graph.add_edge(tuple(bac.lst[:num + 1]), tuple(bac.lst[:num + 2]))
     # adding the value of the nodes
-    if tuple(bac.lst[:num+1]) in vald:
-        vald[tuple(bac.lst[:num+1])] += bac.val
+    if tuple(bac.lst[:num + 1]) in vald:
+        vald[tuple(bac.lst[:num + 1])] += bac.val
     else:
-        vald[tuple(bac.lst[:num+1])] = bac.val
+        vald[tuple(bac.lst[:num + 1])] = bac.val
 
 
 def create_final_graph(tempGraph, valdict, zeroflag):
@@ -62,6 +59,3 @@ def create_final_graph(tempGraph, valdict, zeroflag):
             graph.add_edge((e[0], valdict[e[0]]),
                            (e[1], valdict[e[1]]))
     return graph
-
-if __name__ == "__main__":
-    create_tax_tree(pickle.load(open("series.p", "rb")))
