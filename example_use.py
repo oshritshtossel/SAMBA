@@ -1,7 +1,11 @@
 import MIPMLP
 import pandas as pd
-from src import micro2matrix
-from src import build_SAMBA_distance_matrix
+
+try:
+    from samba import micro2matrix,build_SAMBA_distance_matrix
+except:
+    from src.samba import micro2matrix
+    from src.samba import build_SAMBA_distance_matrix
 
 if __name__ == '__main__':
     # Load the raw data in the required format
