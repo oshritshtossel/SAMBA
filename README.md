@@ -26,7 +26,7 @@ You should follow the following steps:
     processed = MIPMLP.preprocess(df)
     ```
     
-3. micro2matrix (translate microbiome into matrix according to [iMic]([https://arxiv.org/abs/2205.06525](https://doi.org/10.1080/19490976.2023.2224474), and save the images in a prepared folder
+3. micro2matrix (translate microbiome into matrix according to [iMic](https://doi.org/10.1080/19490976.2023.2224474), and save the images in a prepared folder
    
    ```
     folder = "example_data/2D_images"
