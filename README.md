@@ -6,7 +6,7 @@ This image-based representation enhances data visualization and analysis. Moreov
 reducing noise and accentuating meaningful information. Various distance metrics, such as SAM and MSE, can be applied to the processed images.
 
 ## How to apply SAMBA
-SAMBA's code is available at this [GitHub](https://github.com/oshritshtossel/SAMBA/new/master?readme=1) as well as [pypi]().
+SAMBA's code is available at this [GitHub](https://github.com/oshritshtossel/SAMBA/new/master?readme=1) as well as [pypi](https://pypi.org/project/samba-metric/).
 
 ### SAMBA's GitHub
 There is an example in example_use.py.
@@ -26,7 +26,7 @@ You should follow the following steps:
     processed = MIPMLP.preprocess(df)
     ```
     
-3. micro2matrix (translate microbiome into matrix according to [iMic](https://arxiv.org/abs/2205.06525), and save the images in a prepared folder
+3. micro2matrix (translate microbiome into matrix according to [iMic]([https://arxiv.org/abs/2205.06525](https://doi.org/10.1080/19490976.2023.2224474), and save the images in a prepared folder
    
    ```
     folder = "example_data/2D_images"
@@ -41,5 +41,19 @@ You should follow the following steps:
     ```
 
 ### SAMBA's Pypi
+1. Pip install the package
+ ```
+    pip install samba-metric
+    ```
+2. Apply SAMBA on a MIPMLP processed data:
+```
+from samba import *
+processed = pd.read_csv("example_data.csv",index_col=0)
+folder = "FOLDER_NAME"
+    micro2matrix(processed, folder, save=True)
+
+    # Calculate the distance matrix according to SAMBA
+    DM = build_SAMBA_distance_matrix(folder)
+    DM.to_csv(f"{FOLDER_NAME}/samba_dists.csv")
     
     
