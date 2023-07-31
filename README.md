@@ -42,18 +42,22 @@ You should follow the following steps:
 
 ### SAMBA's Pypi
 1. Pip install the package
- ```
-    pip install samba-metric
-    ```
-2. Apply SAMBA on a MIPMLP processed data:
+
+```
+pip install samba-metric
+```
+
+
+3. Apply SAMBA on a MIPMLP processed data:
 ```
 from samba import *
 processed = pd.read_csv("example_data.csv",index_col=0)
 folder = "FOLDER_NAME"
-    micro2matrix(processed, folder, save=True)
+micro2matrix(processed, folder, save=True)
 
-    # Calculate the distance matrix according to SAMBA
-    DM = build_SAMBA_distance_matrix(folder)
-    DM.to_csv(f"{FOLDER_NAME}/samba_dists.csv")
+# Calculate the distance matrix according to SAMBA
+DM = build_SAMBA_distance_matrix(folder)
+DM.to_csv(f"{folder}/samba_dists.csv")
+```
     
     
