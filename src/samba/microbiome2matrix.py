@@ -73,7 +73,8 @@ def get_map(tree, nettree):
     leafs_num = len([i for i in nettree if len(nettree.succ[i]) == 0])
 
     m = np.zeros((height, leafs_num)) / 0
-    N = np.zeros((height, leafs_num)).astype(str)
+    str_size = max([len(str(i)) for i in nettree]) + 16
+    N = np.zeros((height, leafs_num)).astype(f"U{str_size}")
     m, N = dfs_(tree, m, N)
 
     return m, N

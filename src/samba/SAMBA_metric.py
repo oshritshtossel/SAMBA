@@ -1,9 +1,10 @@
 import os
-
+import umap
 import pandas as pd
 import numpy as np
 from scipy.spatial.distance import cdist
 from sewar.full_ref import mse, sam
+import matplotlib.pyplot as plt
 
 
 def load_img(folder_path, tag=None):
@@ -125,3 +126,24 @@ def build_SAMBA_distance_matrix(folder_path, metric="sam", cutoff=0.8, tag=None)
         dm = pd.DataFrame(dm, index=tag.index, columns=tag.index)
 
     return dm
+
+
+def plot_umap(dm, tag, save):
+    umap_embedding = umap.UMAP(metric='precomputed').fit_transform(dm)
+    umap_embedding_df = pd.DataFrame(data=umap_embedding, index=tag.index, columns=["PCA1", "PCA2"])
+    tag0 = tag[tag.values == 0]
+    tag1 = tag[tag.values == 1]
+
+    umap_embedding_df0 = umap_embedding_df.loc[tag0.index]
+    umap_embedding_df1 = umap_embedding_df.loc[tag1.index]
+
+    plt.scatter(umap_embedding_df0["PCA1"], umap_embedding_df0["PCA2"], color="red", label="Control")
+    plt.scatter(umap_embedding_df1["PCA1"], umap_embedding_df1["PCA2"], color="blue", label="Condition")
+    plt.xlabel("UMAP dim 1", fontdict={"fontsize": 15})
+    plt.ylabel("UMAP dim 2", fontdict={"fontsize": 15})
+    plt.xticks(fontsize=15)
+    plt.yticks(fontsize=15)
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig(f"{save}/umap_plot.png")
+    plt.show()
