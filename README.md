@@ -6,14 +6,14 @@ This image-based representation enhances data visualization and analysis. Moreov
 reducing noise and accentuating meaningful information. Various distance metrics, such as SAM and MSE, can be applied to the processed images.
 
 ## How to apply SAMBA
-SAMBA's code is available at this [GitHub](https://github.com/oshritshtossel/SAMBA/new/master?readme=1) as well as [pypi](https://pypi.org/project/samba-metric/).
+SAMBA's code is available at this [GitHub](https://github.com/oshritshtossel/SAMBA/new/master?readme=1) as well as [PyPi](https://pypi.org/project/samba-metric/).
 
 ### SAMBA's GitHub
 There is an example in example_use.py.
 You should follow the following steps:
-1. Load the raw ASVs table in the following format: the first column names "ID",
+1. Load the raw ASVs table in the following format: the first column is named "ID",
    each row represents a sample and each column represents an ASV. The last row 
-   contains the taxonomy information, names "taxonomy".
+   contains the taxonomy information, named "taxonomy".
    
     ```
     df = pd.read_csv("example_data/for_preprocess.csv")
@@ -39,25 +39,50 @@ You should follow the following steps:
    ```
     DM = build_SAMBA_distance_matrix(folder,cutoff=CUTOFF,metric=METRIC)
     ```
+5. If a tag table is available. One can load the tag file and visualize the data according to the SAMBA metric by the plot_umap function.
+   "example_data" is the folder path for saving.
+      ```
+     tag = pd.read_csv("example_data/tag.csv",index_col=0)
+     plot_umap(DM,tag,"example_data")
+    ```
 
-### SAMBA's Pypi
-1. Pip install the package
+
+### SAMBA's PyPi
+1. Install the SAMBA package
 
 ```
 pip install samba-metric
 ```
+2. Apply the MIPMLP with the default parameters
+   
+```
+processed = MIPMLP.preprocess(df)
+```
+or -  load a MIPMLP processed data directly.
 
+```
+processed = pd.read_csv("example_data.csv",index_col=0)
 
-3. Apply SAMBA on a MIPMLP processed data:
+```
+
+4. Apply SAMBA on a MIPMLP processed data:
 ```
 from samba import *
-processed = pd.read_csv("example_data.csv",index_col=0)
+# If the tag is available
+tag = pd.read_csv("example_data/tag.csv",index_col=0)
+
 folder = "FOLDER_NAME"
 micro2matrix(processed, folder, save=True)
 
 # Calculate the distance matrix according to SAMBA
 DM = build_SAMBA_distance_matrix(folder)
 DM.to_csv(f"{folder}/samba_dists.csv")
+```
+5. If a tag table is available. One can load the tag file and visualize the data according to the SAMBA metric by the plot_umap function.
+   "example_data" is the folder path for saving.
+```
+tag = pd.read_csv("example_data/tag.csv",index_col=0)
+plot_umap(DM,tag,"example_data")
 ```
     
     
