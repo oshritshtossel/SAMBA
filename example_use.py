@@ -3,9 +3,10 @@ import pandas as pd
 
 try:
     from samba import micro2matrix,build_SAMBA_distance_matrix,plot_umap
+
 except:
     from src.samba import micro2matrix
-    from src.samba import build_SAMBA_distance_matrix
+    from src.samba import build_SAMBA_distance_matrix,plot_umap
 
 if __name__ == '__main__':
     # Load the raw data in the required format
