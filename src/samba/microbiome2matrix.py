@@ -149,7 +149,7 @@ def dendogram_ordering(otu, df, folder, save=False, N=None, with_dend=True):
         rec(otu, names, N)
         df = df[names]
 
-    if not os.path.exists(folder):
+    if not os.path.exists(folder) and save is True:
         os.makedirs(folder)
     if save is not False:
 

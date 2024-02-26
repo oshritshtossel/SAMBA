@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: samba_metric
-Version: 0.0.12
+Version: 0.0.11
 Author-email: Oshrit Shtossel <oshritvig@gmail.com>
 Classifier: License :: OSI Approved :: MIT License
 Classifier: Programming Language :: Python
