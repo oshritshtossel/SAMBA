@@ -72,10 +72,10 @@ from samba import *
 tag = pd.read_csv("example_data/tag.csv",index_col=0)
 
 folder = "FOLDER_NAME"
-micro2matrix(processed, folder, save=True)
+array_of_imgs,bact_names, ordered_df = micro2matrix(processed, folder, save=False)
 
 # Calculate the distance matrix according to SAMBA
-DM = build_SAMBA_distance_matrix(folder)
+DM = build_SAMBA_distance_matrix(folder,imgs=array_of_imgs,ordered_df=ordered_df)
 DM.to_csv(f"{folder}/samba_dists.csv")
 ```
 5. If a tag table is available. One can load the tag file and visualize the data according to the SAMBA metric by the plot_umap function.

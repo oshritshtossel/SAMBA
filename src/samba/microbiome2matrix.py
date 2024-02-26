@@ -175,7 +175,7 @@ def dendogram_ordering(otu, df, folder, save=False, N=None, with_dend=True):
     else:
         for m in otu:
             M.append(m)
-    return np.array(M)
+    return np.array(M),N,df
 
 
 def tree_to_newick(g, root=None):
@@ -194,4 +194,5 @@ def tree_to_newick(g, root=None):
 
 def micro2matrix(df, folder, save):
     otus2d, names = otu22d(df, save=False, with_names=True)
-    dendogram_ordering(otus2d, df, folder, save=save, N=names, with_dend=True)
+    array_of_imgs,bact_names, ordered_df = dendogram_ordering(otus2d, df, folder, save=save, N=names, with_dend=True)
+    return array_of_imgs,bact_names, ordered_df

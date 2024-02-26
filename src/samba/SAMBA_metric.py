@@ -90,20 +90,30 @@ def final_distance(output1, output2, f):
         return mse(output1, output2)
 
 
-def build_SAMBA_distance_matrix(folder_path, metric="sam", cutoff=0.8, tag=None):
+def build_SAMBA_distance_matrix(folder_path, metric="sam", cutoff=0.8, tag=None,imgs=None,ordered_df=None):
     """
     Build SAMBA distance matrix of the FFT processed images using the metric as the
     final distance metric between the processed images, and the cutoff as the FFT cutoff
-    :param folder_path: Path of the folder where the images from micro2matrix are saved (str)
+    :param folder_path: Path of the folder where the images from micro2matrix are saved if save was True(str)
     :param metric: Metric to calculate the distance according to.
                    One of  "d1","d2","d3","sam","mse"
     :param cutoff: Cutoff frequency as a fraction of the maximum possible frequency (float)
-    :param tag: Default is None, but if we want to work only on images which we have theri tag
-                a tag dataframe or series should be passed too (pandas)
-    :return: Distance matrix dataframe (pandas)
+    :param tag: Default is None, but if we want to work only on images which we have their tag
+                a tag dataframe or series should be passed too (pandas dataframe)
+    :param imgs: If one wants to work with saved images from folder it is None, else it is an array of 2D images (ndarray)
+    :param ordered_df: If one wants to work with saved images from folder it is None, else it is a pandas dataframe with
+    the new order of the taxa as its columns (pandas dataframe)
+    :return: Distance matrix dataframe (pandas dataframe)
     """
     # Load images from the folder
-    imgs, names = load_img(folder_path, tag)
+    if imgs is None:
+        imgs, names = load_img(folder_path, tag)
+    else:
+        if tag is None:
+            names = list(ordered_df.index)
+        else:
+            names = list(tag.index.intersection(orderd_df.index))
+
 
     # Image shape
     x_axis = imgs.shape[-1]
