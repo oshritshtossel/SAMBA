@@ -46,6 +46,7 @@ You should follow the following steps:
      tag = pd.read_csv("example_data/tag.csv",index_col=0)
      plot_umap(DM,tag,"example_data")
     ```
+
 #### GIMIC as a cross-cohort visualization tool
 There is an example in example_use_meta_analysis.py.\
 You should follow the following steps:
@@ -109,6 +110,7 @@ CLASS = False
     plot_umap(DM, tag, "example_data")
 
 ```
+   ![Output](umap_plot.png)
 5. Apply GIMIC cross-cohort visualization on several cohorts from the same phenotype.
    **NOTE: in each data folder there should be the following csvs 'for_preprocess.csv' and 'tag.csv', in the format of the files in example_data_meta folder.**
    ```
@@ -122,5 +124,5 @@ CLASS = False
 
     apply_meta_analysis(folder,list_data_names,CUTOFF)
    ```
-    
+
     
