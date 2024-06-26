@@ -125,5 +125,5 @@ CLASS = False
 
     apply_meta_analysis(folder,list_data_names,CUTOFF)
    ```
-![Alt text](circle_Example meta analysis.png)
+![Alt text](circle_Example_meta_analysis.png)
     
