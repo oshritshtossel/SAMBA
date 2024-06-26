@@ -5,6 +5,13 @@ import numpy as np
 from scipy.spatial.distance import cdist
 from sewar.full_ref import mse, sam
 import matplotlib.pyplot as plt
+import MIPMLP
+from .microbiome2matrix import micro2matrix
+from scipy.stats import norm
+from functools import reduce
+from matplotlib.patches import Circle
+from matplotlib.collections import PatchCollection
+
 
 
 def load_img(folder_path, tag=None):
@@ -90,7 +97,7 @@ def final_distance(output1, output2, f):
         return mse(output1, output2)
 
 
-def build_SAMBA_distance_matrix(folder_path, metric="sam", cutoff=0.8, tag=None,imgs=None,ordered_df=None):
+def build_SAMBA_distance_matrix(folder_path, metric="sam", cutoff=0.8, tag=None,imgs=None,ordered_df=None,bact_names=None,class_=False):
     """
     Build SAMBA distance matrix of the FFT processed images using the metric as the
     final distance metric between the processed images, and the cutoff as the FFT cutoff
@@ -112,19 +119,48 @@ def build_SAMBA_distance_matrix(folder_path, metric="sam", cutoff=0.8, tag=None,
         if tag is None:
             names = list(ordered_df.index)
         else:
-            names = list(tag.index.intersection(orderd_df.index))
+            names = list(tag.index.intersection(ordered_df.index))
 
 
     # Image shape
     x_axis = imgs.shape[-1]
     y_axis = imgs.shape[-2]
 
+    def create_classes(bact_names):
+        names = list(bact_names[3])
+        list_classes = []
+        for bact in names:
+            if len(bact.split(";")) >= 3:
+                c = bact.split(";")[2]
+            else:
+                c = bact.split(";")[-1]
+            list_classes.append(c)
+        return list_classes
+
+    def make_class_img(diff,list_classes):
+        #diff = diff.T
+        diff_df = pd.DataFrame(data=diff,
+                               columns=["Root", "Kingdom", "Phylum", "Class", "Order", "Family", "Genus", "Species"],
+                               index=list_classes)
+        diff_df.index = [i.replace("_0", "") for i in diff_df.index]
+        diff_c = diff_df.groupby(diff_df.index).mean()
+        # only classes, remove p__ and k__
+        if "0.0" in list(diff_c.index):
+            diff_c = diff_c.drop(index="0.0")
+        return diff_c
     # Function for images adjusting (FFT) and calculating the pairwise distance
     def fft_dist(x, y):
         x = x.reshape(x_axis, y_axis)
         y = y.reshape(x_axis, y_axis)
         x_after = fft_process(x, cutoff)
         y_after = fft_process(y, cutoff)
+        ######### TRY###############
+        if class_:
+            list_classes = create_classes(bact_names)
+            x_after = make_class_img(x_after,list_classes)
+            y_after = make_class_img(y_after,list_classes)
+            x_after = x_after.values
+            y_after = y_after.values
         return final_distance(x_after, y_after, metric)
 
     # Build the SAMBA distance matrix
@@ -157,3 +193,223 @@ def plot_umap(dm, tag, save):
     plt.tight_layout()
     plt.savefig(f"{save}/umap_plot.png")
     plt.show()
+
+def compute_var_values(img,cutoff=None):
+    if cutoff == None:
+        # Compute the FFT of the image
+        fft_result = np.fft.fft2(img)
+
+        # Shift the zero frequency component to the center of the spectrum
+        fft_result = np.fft.fftshift(fft_result)
+        fft_var = fft_result.var()
+    else:
+        fft = np.fft.fft2(img)
+
+        # Shift the zero-frequency component to the center of the array
+        fft_shifted = np.fft.fftshift(fft)
+
+        # Define the cutoff frequency (as a fraction of the maximum possible frequency)
+        cutoff_freq = cutoff
+
+        # Create a mask to keep only the low-frequency components
+        rows, cols = fft_shifted.shape
+        crow, ccol = int(rows / 2), int(cols / 2)
+        mask = np.zeros((rows, cols), dtype=bool)
+        mask[crow - int(cutoff_freq * crow):crow + int(cutoff_freq * crow),
+        ccol - int(cutoff_freq * ccol):ccol + int(cutoff_freq * ccol)] = True
+
+        # Apply the mask to the FFT
+        fft_cutoff = np.copy(fft_shifted)
+        fft_cutoff[~mask] = 0
+
+        # Inverse FFT to get the filtered image
+        img_filtered_x = np.fft.ifft2(np.fft.ifftshift(fft_cutoff))
+    return img_filtered_x
+
+def create_classes(bact_names):
+    names = list(bact_names[3])
+    list_classes = []
+    for bact in names:
+        if len(bact.split(";")) >= 3:
+            c = bact.split(";")[2]
+        else:
+            c = bact.split(";")[-1]
+        list_classes.append(c)
+    return list_classes
+
+def calc_avg(imgs_,CUTOFF):
+    list_imgs_after_fft = list()
+    for img_index, img in enumerate(imgs_):
+        fft_img = compute_var_values(img, CUTOFF)
+        list_imgs_after_fft.append(np.abs(fft_img))
+    # Stack the list into a single 3D ndarray
+    data_stack = np.stack(list_imgs_after_fft)
+    # Compute the variance along the first axis (axis=0)
+    variance_array = np.mean(data_stack, axis=0)
+    return variance_array
+
+def apply_class_analysis(imgs1, imgs0, CUTOFF,bact_names):
+    variance_array0 = calc_avg(imgs0, CUTOFF)
+    variance_array = calc_avg(imgs1, CUTOFF)
+    diff = variance_array - variance_array0
+    list_classes = create_classes(bact_names)
+    diff = diff.T
+    diff_df = pd.DataFrame(data=diff,columns= ["Root","Kingdom","Phylum","Class","Order","Family","Genus","Species"],index= list_classes)
+    diff_df.index = [i.replace("_0","") for i in diff_df.index]
+    diff_c = diff_df.groupby(diff_df.index).mean()
+    if '0.0' in diff_c.index:
+        diff_c = diff_c.drop('0.0')
+    return diff_c
+
+def make_consistent_imgs(dfs):
+    # Step 1: Create a list with unique indexes of all DataFrames
+    unique_indexes = set()
+    for df in dfs.values():
+        unique_indexes.update(df.index)
+
+    unique_indexes = list(unique_indexes)  # Convert to list
+
+    # Step 2: Fill each DataFrame with the missing indexes with zeros
+    for key in dfs:
+        dfs[key] = dfs[key].reindex(unique_indexes, fill_value=0)
+
+    # Step 3: Reorder the indexes in all DataFrames to be in the same order
+    for key in dfs:
+        dfs[key] = dfs[key].loc[unique_indexes]
+    return dfs
+
+def adjust_df_values(df):
+    # Step 1: Compute the Z-score for each entry
+    mean = df.mean().mean()
+    std = df.stack().std()
+    z_scores = (df - mean) / std
+
+    # Step 2: Calculate the p-value for each Z-score
+    p_values = 2 * (1 - norm.cdf(np.abs(z_scores)))  # two-tailed test
+
+    # Step 3: Apply the condition to modify the DataFrame values
+    df_adjusted = df.where(p_values < 0.05, 0)
+
+    return df_adjusted
+
+def plot_class_matrix(dfs,title):
+    SIZE = 20
+    dfs = make_consistent_imgs(dfs)
+
+    list_of_sums = list()
+    list_binary_sums = list()
+    for idx, (key, df) in enumerate(dfs.items()):
+        df =adjust_df_values(df)
+        indices_to_remove = ['c__']
+        df = df.drop(index=indices_to_remove, errors='ignore')
+        list_of_sums.append(df)
+        b_df = (df!=0.0).astype(float)
+        list_binary_sums.append(b_df)
+
+    plot_circle_plot(list_of_sums,list_binary_sums,title,SIZE)
+
+def plot_circle_plot(list_of_sums, list_binary_sums, title, SIZE):
+    # Calculate sum and average DataFrames
+    sum_df = reduce(lambda x, y: x + y, list_of_sums)
+    average_df = sum_df / len(list_of_sums)
+    b_sum_df = reduce(lambda x, y: x + y, list_binary_sums)
+
+    # Normalize the sizes to avoid overlapping
+    max_size = b_sum_df.max().max()
+    size_scale = 0.5 / max_size  # Increase the scaling factor for larger circles
+
+    # Create a figure and axis
+    fig, ax = plt.subplots(figsize=(16, 8))
+
+    patches = []
+    colors = []
+    sizes = []
+
+    # Create circles based on DataFrame values
+    for (i, col) in enumerate(average_df.columns):  # Switch to columns for y-axis
+        for (j, row) in enumerate(average_df.index):  # Switch to rows for x-axis
+            value = sum_df.at[row, col]
+            size = b_sum_df.at[row, col] if b_sum_df.at[row, col] != 0 else 0.01  # Avoid zero sizes
+            size = size * size_scale  # Adjust size scale
+            circle = Circle((j, i), size)  # (x, y) coordinates and size of the circle
+            patches.append(circle)
+            colors.append(value)
+            sizes.append(size)
+
+    # Create a PatchCollection
+    p = PatchCollection(patches, cmap='bwr_r', edgecolor='black')
+    p.set_array(np.array(colors))
+    p.set_clim([-0.2, 0.2])  # Set color limits
+
+    # Add circles to the plot
+    ax.add_collection(p)
+
+    # Set axis limits
+    ax.set_xlim(-0.5, len(average_df.index) - 0.5)  # Adjusted for transposed axes
+    ax.set_ylim(-0.5, len(average_df.columns) - 0.5)  # Adjusted for transposed axes
+
+    # Set axis labels and title
+    ax.set_xticks(np.arange(len(average_df.index)))  # Adjusted for transposed axes
+    ax.set_yticks(np.arange(len(average_df.columns)))  # Adjusted for transposed axes
+    ax.set_xticklabels(average_df.index, rotation=90)  # Adjusted for transposed axes
+    ax.set_yticklabels(average_df.columns,fontsize=SIZE)  # Adjusted for transposed axes
+
+    ax.set_title(f'{title}', fontsize=SIZE, fontweight='bold')
+
+    # Add a grid
+    ax.grid(True)
+
+    # Add a color bar
+    cbar = plt.colorbar(p, ax=ax)
+    cbar.set_label('Sum Value',fontsize=SIZE)
+    cbar.ax.tick_params(labelsize=SIZE)
+    plt.tight_layout()
+    plt.savefig(f"circle_{title}.png")
+    plt.show()
+
+def is_numeric_index(index):
+    try:
+        pd.to_numeric(index)
+        return True
+    except ValueError:
+        return False
+
+def apply_meta_analysis(folder,list_datasets,CUTOFF):
+    dict_class_diffs = dict()
+    for name in list_datasets:
+        # Load raw data and tag. Make sure they are in right format
+        raw = pd.read_csv(f"{folder}/{name}/for_preprocess.csv")
+        tag = pd.read_csv(f"{folder}/{name}/tag.csv",index_col=0)["Tag"]
+
+        # Apply the MIPMLP with the defaultive parameters
+        processed = MIPMLP.preprocess(raw)
+
+        # Check if the processed index is numeric and convert if possible
+        if is_numeric_index(processed.index):
+            processed.index = pd.to_numeric(processed.index, errors='coerce')
+
+        # Check if the tag index is numeric and convert if possible
+        if is_numeric_index(tag.index):
+            tag.index = pd.to_numeric(tag.index, errors='coerce')
+
+        common = list(processed.index.intersection(tag.index))
+        tag = tag.loc[common]
+        processed = processed.loc[common]
+        # micro2matrix there is an option to save the images in a prepared folder
+        array_of_imgs, bact_names, ordered_df = micro2matrix(processed, f"{folder}/{name}/2D_images", save=False)
+        tag0 = tag[tag.values == 0.0]
+        tag1 = tag[tag.values == 1.0]
+        imgs_names = list(ordered_df.index)
+        # Find the indices of the common values between tag0 and imgs_names
+        img0_index = [imgs_names.index(name) for name in tag0.index if name in imgs_names]
+
+        # Find the indices of the common values between tag1 and imgs_names
+        img1_index = [imgs_names.index(name) for name in tag1.index if name in imgs_names]
+        imgs0 = array_of_imgs[img0_index]
+        imgs1 = array_of_imgs[img1_index]
+
+        diff_c = apply_class_analysis(imgs1, imgs0, CUTOFF=CUTOFF, bact_names=bact_names)
+        dict_class_diffs[name] = diff_c
+    plot_class_matrix(dict_class_diffs,"Example meta analysis")
+
+
