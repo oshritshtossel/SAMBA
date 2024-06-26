@@ -111,6 +111,7 @@ CLASS = False
 
 ```
    ![Output](umap_plot.png)
+   
 5. Apply GIMIC cross-cohort visualization on several cohorts from the same phenotype.
    **NOTE: in each data folder there should be the following csvs 'for_preprocess.csv' and 'tag.csv', in the format of the files in example_data_meta folder.**
    ```
@@ -124,5 +125,5 @@ CLASS = False
 
     apply_meta_analysis(folder,list_data_names,CUTOFF)
    ```
-
+![Alt text](circle_Example meta analysis.png)
     
